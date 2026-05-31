@@ -33,39 +33,42 @@ const Contact = () => {
     }
   }, [sectionEntered, isSectionLoading]);
 
-  useEffect(() => {
-    let timer1: any;
-    let timer2: any;
-
-    if (connectionState === 'sending') {
-      timer1 = setTimeout(() => {
-        setConnectionState('connected');
-        timer2 = setTimeout(() => {
-          const subject = encodeURIComponent(`Portfolio Message from ${emailForm.name}`);
-          const body = encodeURIComponent(
-            `Hello Denil,\n\nYou have received a message from your portfolio website:\n\n` +
-            `Name: ${emailForm.name}\n` +
-            `Email: ${emailForm.email}\n\n` +
-            `Message:\n${emailForm.message}\n\n` +
-            `Best regards,\n${emailForm.name}`
-          );
-          window.location.href = `mailto:denil.baby001@gmail.com?subject=${subject}&body=${body}`;
-          
-          setConnectionState('idle');
-          setEmailForm({ name: '', email: '', message: '' });
-        }, 1000);
-      }, 1800);
-    }
-
-    return () => {
-      clearTimeout(timer1);
-      clearTimeout(timer2);
-    };
-  }, [connectionState, emailForm]);
-
-  const handleEmailSubmit = (e: React.FormEvent) => {
+  const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setConnectionState('sending');
+    
+    try {
+      const response = await fetch("https://api.web3forms.com/submit", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json"
+        },
+        body: JSON.stringify({
+          access_key: import.meta.env.VITE_WEB3FORMS_ACCESS_KEY || "YOUR_ACCESS_KEY_HERE",
+          name: emailForm.name,
+          email: emailForm.email,
+          message: emailForm.message,
+          subject: `Portfolio Message from ${emailForm.name}`
+        })
+      });
+      
+      const result = await response.json();
+      if (result.success) {
+        setConnectionState('connected');
+        setTimeout(() => {
+          setConnectionState('idle');
+          setEmailForm({ name: '', email: '', message: '' });
+        }, 3000);
+      } else {
+        alert("Failed to send message: " + result.message);
+        setConnectionState('idle');
+      }
+    } catch (error) {
+      console.error(error);
+      alert("An error occurred while sending the message. Please try again.");
+      setConnectionState('idle');
+    }
   };
 
   return (
@@ -260,19 +263,19 @@ const Contact = () => {
                         </div>
 
                         <h4 className="text-2xl font-black mb-1">
-                          {connectionState === 'sending' ? 'Preparing Draft...' : 'MAIL CLIENT LAUNCHED!'}
+                          {connectionState === 'sending' ? 'Sending Message...' : 'MESSAGE SENT!'}
                         </h4>
 
                         <p className="text-slate-500 dark:text-slate-400 font-bold uppercase tracking-widest text-[10px] flex items-center gap-1.5 justify-center mb-6">
                           {connectionState === 'sending' ? (
                             <>
                               <Send size={12} className="animate-pulse" />
-                              Loading Mailer Config...
+                              Connecting to secure mail servers...
                             </>
                           ) : (
                             <>
                               <Check size={12} className="text-emerald-500" />
-                              Redirecting to client...
+                              Thank you, I'll get back to you shortly.
                             </>
                           )}
                         </p>
