@@ -43,7 +43,7 @@ const Contact = () => {
     }
     setConnectionState('sending');
     try {
-      const result = await emailjs.send(
+      await emailjs.send(
         import.meta.env.VITE_EMAILJS_SERVICE_ID,
         import.meta.env.VITE_EMAILJS_TEMPLATE_ID,
         {
@@ -291,7 +291,7 @@ const Contact = () => {
                           type="button"
                           onClick={() => {
                             setConnectionState('idle');
-                            setEmailForm({ name: '', email: '', message: '' });
+                            setEmailForm({ name: '', email: '', subject: '', message: '' });
                           }}
                           className="px-6 py-2.5 rounded-full bg-slate-200 dark:bg-white/10 hover:bg-slate-300 dark:hover:bg-white/20 font-black tracking-widest uppercase text-[10px] transition-all cursor-pointer flex items-center gap-2"
                         >
