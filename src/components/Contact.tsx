@@ -2,13 +2,14 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Code, Globe, Send, Sparkles, Mail, Check } from 'lucide-react';
 import Magnetic from './Magnetic';
+import emailjs from '@emailjs/browser';
 
 const Contact = () => {
   const [connectionState, setConnectionState] = useState<'idle' | 'sending' | 'connected'>('idle');
   const [sectionEntered, setSectionEntered] = useState(false);
   const [isSectionLoading, setIsSectionLoading] = useState(true);
   const [logIndex, setLogIndex] = useState(0);
-  const [emailForm, setEmailForm] = useState({ name: '', email: '', message: '' });
+  const [emailForm, setEmailForm] = useState({ name: '', email: '', subject: '', message: '' });
 
   const logs = [
     "Establishing secure communication link...",
@@ -35,38 +36,33 @@ const Contact = () => {
 
   const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    // Basic validation
+    if (!emailForm.name || !emailForm.email || !emailForm.subject || !emailForm.message) {
+      alert('Please fill in all required fields.');
+      return;
+    }
     setConnectionState('sending');
-    
     try {
-      const response = await fetch("https://api.web3forms.com/submit", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json"
-        },
-        body: JSON.stringify({
-          access_key: import.meta.env.VITE_WEB3FORMS_ACCESS_KEY || "YOUR_ACCESS_KEY_HERE",
+      const result = await emailjs.send(
+        import.meta.env.VITE_EMAILJS_SERVICE_ID,
+        import.meta.env.VITE_EMAILJS_TEMPLATE_ID,
+        {
           name: emailForm.name,
           email: emailForm.email,
+          subject: emailForm.subject,
           message: emailForm.message,
-          subject: `Portfolio Message from ${emailForm.name}`
-        })
-      });
-      
-      const result = await response.json();
-      if (result.success) {
-        setConnectionState('connected');
-        setTimeout(() => {
-          setConnectionState('idle');
-          setEmailForm({ name: '', email: '', message: '' });
-        }, 3000);
-      } else {
-        alert("Failed to send message: " + result.message);
+        },
+        import.meta.env.VITE_EMAILJS_PUBLIC_KEY
+      );
+      // EmailJS resolves if successful
+      setConnectionState('connected');
+      setTimeout(() => {
         setConnectionState('idle');
-      }
+        setEmailForm({ name: '', email: '', subject: '', message: '' });
+      }, 3000);
     } catch (error) {
       console.error(error);
-      alert("An error occurred while sending the message. Please try again.");
+      alert('Failed to send message. Please try again.');
       setConnectionState('idle');
     }
   };
@@ -205,7 +201,18 @@ const Contact = () => {
                               className="w-full px-4 py-3 rounded-xl bg-white/80 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-800 dark:text-white font-semibold text-sm focus:border-blue-500 focus:outline-none transition-colors"
                             />
                           </div>
-                        </div>
+                        <div>
+  <label className="text-[10px] font-black uppercase tracking-wider text-slate-400 block mb-1">Subject</label>
+  <input
+    type="text"
+    required
+    value={emailForm.subject}
+    onChange={(e) => setEmailForm({ ...emailForm, subject: e.target.value })}
+    placeholder="Project Inquiry"
+    className="w-full px-4 py-3 rounded-xl bg-white/80 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-800 dark:text-white font-semibold text-sm focus:border-blue-500 focus:outline-none transition-colors"
+  />
+</div>
+</div>
 
                         <div>
                           <label className="text-[10px] font-black uppercase tracking-wider text-slate-400 block mb-1">Message</label>
